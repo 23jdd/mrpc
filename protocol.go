@@ -10,3 +10,16 @@ type Response struct {
     Reply []byte // 序列化后的返回值
     Error string // 错误信息
 }
+//  TL
+func (re*Request)Encode(){
+	 
+}
+func (re*Request)Decode(){
+	  
+}
+func (rs*Response)Encode(){
+	 
+}
+func (rs*Response)Decode(){
+	 
+}
