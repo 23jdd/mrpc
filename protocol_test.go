@@ -128,15 +128,15 @@ func TestWriteFrameExceedsMaxPayload(t *testing.T) {
 func TestReadFrameExceedsMaxPayload(t *testing.T) {
 	var buf bytes.Buffer
 	// 写入一个声称长度超过 MaxPayloadSize 的帧头
-	WriteFrameHeader(&buf, MaxPayloadSize+1)
+	writeFrameHeader(&buf, MaxPayloadSize+1)
 	_, err := ReadFrame(&buf)
 	if err != ErrMaxPayload {
 		t.Fatalf("expected ErrMaxPayload, got %v", err)
 	}
 }
 
-// WriteFrameHeader 写入帧长度头（用于测试只写头不写体）。
-func WriteFrameHeader(w *bytes.Buffer, size uint32) {
+// writeFrameHeader 写入帧长度头（用于测试只写头不写体）。
+func writeFrameHeader(w *bytes.Buffer, size uint32) {
 	b := make([]byte, 4)
 	// Use BigEndian
 	b[0] = byte(size >> 24)

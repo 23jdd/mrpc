@@ -125,9 +125,9 @@ func TestCallMethod(t *testing.T) {
 	req := AddReq{A: 3, B: 5}
 	var reply AddReply
 
-	err := CallMethod(v, "Add", req, &reply)
+	err := callMethod(v, "Add", req, &reply)
 	if err != nil {
-		t.Fatalf("CallMethod failed: %v", err)
+		t.Fatalf("callMethod failed: %v", err)
 	}
 	if reply.Sum != 8 {
 		t.Fatalf("Sum: got %d, want 8", reply.Sum)
@@ -138,7 +138,7 @@ func TestCallMethod(t *testing.T) {
 func TestCallMethodError(t *testing.T) {
 	v := reflect.ValueOf(&testErr{})
 	var reply AddReply
-	err := CallMethod(v, "Fail", AddReq{}, &reply)
+	err := callMethod(v, "Fail", AddReq{}, &reply)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

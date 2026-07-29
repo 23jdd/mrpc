@@ -28,7 +28,7 @@ type Server struct {
 }
 
 // Connect 表示一个已建立的客户端连接，绑定特定编解码器。
-type Connect struct {
+type connect struct {
 	s     *Server
 	con   net.Conn
 	codec Codec
@@ -50,11 +50,11 @@ func (s *Server) nextSeq() uint64 {
 }
 
 // NewConn 从 TCP 连接创建一个 Connect 对象。
-func (s *Server) NewConn(con net.Conn, codec Codec) *Connect {
+func (s *Server) NewConn(con net.Conn, codec Codec) *connect {
 	if con == nil {
 		return nil
 	}
-	return &Connect{
+	return &connect{
 		s:     s,
 		con:   con,
 		codec: codec,
@@ -92,7 +92,7 @@ func (s *Server) Run() {
 // Handler 处理 RPC 请求循环：在一个连接上可处理多次单向非流式调用。
 // 每次循环：接收一个请求 → 反射调用已注册方法 → 发送响应。
 // 当 ReadRequest 返回 io.EOF 或其它不可恢复错误时退出并关闭连接。
-func (c *Connect) Handler() {
+func (c *connect) Handler() {
 	defer c.con.Close()
 
 	for {
@@ -237,10 +237,10 @@ func (s *Server) Call(method string, req, reply any) error {
 	if !ok {
 		return fmt.Errorf("mrpc: service %s not found", svcName)
 	}
-	return CallMethod(v, methName, req, reply)
+	return callMethod(v, methName, req, reply)
 }
 
-// CallMethod 对指定反射值调用其指定名称的方法。
+// callMethod 对指定反射值调用其指定名称的方法。
 //
 // target 必须是合法的 reflect.Value（直接使用 s.svc 中的值），
 // 不可再用 reflect.ValueOf 二次包装。
@@ -254,7 +254,7 @@ func (s *Server) Call(method string, req, reply any) error {
 // 边界条件：
 //   - 若方法名不存在，reflect.MethodByName 返回 zero Value，Call 会 panic
 //   - req/reply 类型不匹配时，reflect.Call 会 panic
-func CallMethod(target reflect.Value, methodName string, req, reply any) error {
+func callMethod(target reflect.Value, methodName string, req, reply any) error {
 	m := target.MethodByName(methodName)
 	args := []reflect.Value{
 		reflect.ValueOf(req),
