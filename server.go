@@ -136,7 +136,7 @@ func (c *connect) Handler() {
 		// 创建响应参数：ReplyType 必定为指针类型
 		reply := reflect.New(method.ReplyType.Elem()).Interface()
 
-		cerr := c.s.Call(rq.ServiceMethod, req, reply)
+		cerr := c.s.call(rq.ServiceMethod, req, reply)
 		if cerr != nil {
 			SendResponse(c.con, NewResponse(0, nil, cerr.Error()))
 			return
@@ -222,13 +222,13 @@ func (s *Server) Registery(name string, target any) error {
 	return s.Register(name, target)
 }
 
-// Call 根据 "ServiceName.MethodName" 格式的方法名进行反射调用。
+// call 根据 "ServiceName.MethodName" 格式的方法名进行反射调用。
 //
 // 参数：
 //   - method: 格式为 "ServiceName.MethodName"
 //   - req:    请求参数，类型必须与注册时一致
 //   - reply:  响应参数指针，结果将写入此处
-func (s *Server) Call(method string, req, reply any) error {
+func (s *Server) call(method string, req, reply any) error {
 	svcName, methName, found := strings.Cut(method, ".")
 	if !found {
 		return errors.New("mrpc: method format error, expected 'Service.Method'")

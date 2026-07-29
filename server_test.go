@@ -153,7 +153,7 @@ func TestServerCall(t *testing.T) {
 	srv.Register("Arith", &testArith{})
 
 	var reply AddReply
-	err := srv.Call("Arith.Add", AddReq{A: 2, B: 3}, &reply)
+	err := srv.call("Arith.Add", AddReq{A: 2, B: 3}, &reply)
 	if err != nil {
 		t.Fatalf("Call failed: %v", err)
 	}
@@ -162,13 +162,13 @@ func TestServerCall(t *testing.T) {
 	}
 
 	// 错误格式的方法名
-	err = srv.Call("BadFormat", AddReq{}, &reply)
+	err = srv.call("BadFormat", AddReq{}, &reply)
 	if err == nil {
 		t.Fatal("expected error for malformed method name")
 	}
 
 	// 不存在的服务
-	err = srv.Call("NoSuch.Service", AddReq{}, &reply)
+	err = srv.call("NoSuch.Service", AddReq{}, &reply)
 	if err == nil {
 		t.Fatal("expected error for unknown service")
 	}
@@ -217,7 +217,7 @@ func TestServerCallPointerReqType(t *testing.T) {
 
 	var reply AddReply
 	req := &AddReq{A: 7, B: 3}
-	err := srv.Call("Arith.EchoReq", req, &reply)
+	err := srv.call("Arith.EchoReq", req, &reply)
 	if err != nil {
 		t.Fatalf("Call EchoReq failed: %v", err)
 	}
