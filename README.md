@@ -105,11 +105,6 @@ func (s *Server) Run()
 
 启动服务端主循环，阻塞直到 `lis.Accept()` 返回不可恢复错误。
 
-```go
-func (s *Server) Call(method string, req, reply any) error
-```
-
-在服务端内部进行反射调用（供测试或内部路由使用）。
 
 ### Client
 
