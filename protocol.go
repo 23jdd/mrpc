@@ -112,11 +112,14 @@ func readString(r io.Reader) (string, error) {
 	if err := binary.Read(r, binary.BigEndian, &length); err != nil {
 		return "", err
 	}
-	b := make([]byte, length)
+	b := DefaultPool.Get(int(length))
 	if _, err := io.ReadFull(r, b); err != nil {
+		DefaultPool.Put(b)
 		return "", err
 	}
-	return string(b), nil
+	s := string(b)
+	DefaultPool.Put(b)
+	return s, nil
 }
 
 func writeBytes(buf *bytes.Buffer, b []byte) error {
@@ -162,11 +165,19 @@ func ReadFrame(r io.Reader) ([]byte, error) {
 	if totalLen > MaxPayloadSize {
 		return nil, ErrMaxPayload
 	}
-	payload := make([]byte, totalLen)
+	payload := DefaultPool.Get(int(totalLen))
 	if _, err := io.ReadFull(r, payload); err != nil {
+		DefaultPool.Put(payload)
 		return nil, err
 	}
 	return payload, nil
+}
+
+// PutFrame 将从 ReadFrame 获取的帧 buffer 归还给 DefaultPool。
+// 调用方在完成帧数据的解码后应调用此函数。
+// 与 DefaultPool.Put 等价，方便配对使用：ReadFrame / PutFrame。
+func PutFrame(payload []byte) {
+	DefaultPool.Put(payload)
 }
 
 func SendRequest(w io.Writer, req *Request) error {
@@ -182,6 +193,7 @@ func ReceiveRequest(r io.Reader) (*Request, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer PutFrame(payload)
 	var req Request
 	if err := req.Decode(payload); err != nil {
 		return nil, err
@@ -202,6 +214,7 @@ func ReceiveResponse(r io.Reader) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer PutFrame(payload)
 	var resp Response
 	if err := resp.Decode(payload); err != nil {
 		return nil, err

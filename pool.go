@@ -82,3 +82,23 @@ func (tp *TieredPool) Put(buf []byte) {
 		}
 	}
 }
+
+// DefaultPool 是协议层内部使用的默认分级缓冲池。
+// 覆盖从 128B 到 10MB 的常见 RPC 负载大小，减少 ReadFrame 和 readString 的内存分配。
+//
+// 调用方也可以直接使用 DefaultPool 管理自己的缓冲区：
+//
+//	buf := mrpc.DefaultPool.Get(4096)
+//	defer mrpc.DefaultPool.Put(buf)
+var DefaultPool = NewTieredPool(
+	128,       // 方法名、小字符串
+	512,       // 小请求体
+	2048,      // 中等请求
+	8192,      // 较大请求
+	32768,     // 32KB
+	65536,     // 64KB
+	262144,    // 256KB
+	524288,    // 512KB
+	1048576,   // 1MB
+	MaxPayloadSize, // 10MB
+)
