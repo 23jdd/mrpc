@@ -3,6 +3,7 @@ package mrpc
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"reflect"
 	"strings"
@@ -20,12 +21,62 @@ type Server struct {
 	methods map[string]RPCMethod
 }
 type Connect struct {
+	s     *Server
+	con   net.Conn
+	codec Codec
 }
 
 func NewServer(lis net.Listener) *Server {
+	if lis == nil {
+		return nil
+	}
 	return &Server{lis: lis}
 }
+func (s *Server) NewConn(con net.Conn, codec Codec) *Connect {
+	if con != nil {
+		return nil
+	}
+	return &Connect{
+		s:     s,
+		con:   con,
+		codec: codec,
+	}
+}
 func (s *Server) Run() {
+	defer s.lis.Close()
+	for {
+		con, err := s.lis.Accept()
+		if err != nil {
+			log.Println(err)
+		}
+		go s.NewConn(con, &MsgCodec{}).Handler()
+	}
+}
+func (c *Connect) Handler() {
+	defer c.con.Close()
+	rq, err := ReceiveRequest(c.con)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	method, ok := c.s.methods[rq.ServiceMethod]
+	if !ok {
+		return
+	}
+	req := reflect.New(method.ReqType).Interface()
+	reply := reflect.New(method.ReqType).Interface()
+	err = c.codec.Decode(rq.Argv, req)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	cerr := c.s.Call(rq.ServiceMethod, req, reply)
+	buff, err := c.codec.Encode(reply)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	SendResponse(c.con, NewResponse(0, buff, cerr.Error()))
 
 }
 
@@ -65,13 +116,13 @@ func (s *Server) Registery(name string, target any) error {
 
 	return nil
 }
-func (s *Server) Call(method string,req,reply any) error {
+func (s *Server) Call(method string, req, reply any) error {
 	sn, mn, found := strings.Cut(method, ".")
 	if found {
-         return errors.New("Method Format Error")
+		return errors.New("Method Format Error")
 	}
-	v:=s.svc[sn]
-	return CallMethod(v,mn,req,reply)
+	v := s.svc[sn]
+	return CallMethod(v, mn, req, reply)
 }
 
 // CallMethod 调用指定名称的 RPC 风格方法
