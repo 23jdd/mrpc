@@ -3,10 +3,17 @@ package mrpc
 import "net"
 
 type Server struct{
-	 con *net.Conn
+	 lis net.Listener
 }
-
-
-func NewServer(){
+type Connect struct{
 	 
+}
+func NewServer(lis net.Listener)*Server{
+	 return &Server{lis: lis}
+}
+func (s*Server)Run(){
+	 
+}
+func (s*Server)Register(name string){
+	
 }
